@@ -1,0 +1,54 @@
+[package]
+name = "wgpu_fundamentals"
+version = "0.1.1"
+edition = "2021"
+
+[dependencies]
+bytemuck = { version = "1.20.0", features = [ "derive" ] }
+cgmath = "0.18.0"
+env_logger = "0.11.5"
+log = "0.4.22"
+pollster = "0.4.0"
+rand = "0.8.5"
+wgpu = "23.0.1"
+winit = "0.30.5"
+
+[[example]]
+name = "wgpu_info"
+path = "ch01/01_wgpu_info/main.rs"
+
+[[example]]
+name = "triangle_vertex_color"
+path = "ch02/01_triangle_vertex_color/main.rs"
+
+[[example]]
+name = "triangle_primitive"
+path = "ch02/02_triangle_primitive/main.rs"
+
+[[example]]
+name = "triangle_gpu_buffer"
+path = "ch02/03_triangle_gpu_buffer/main.rs"
+
+[[example]]
+name = "line_msaa"
+path = "ch02/04_line_msaa/main.rs"
+
+[[example]]
+name = "cube_rotation"
+path = "ch03/01_cube_rotation/main.rs"
+
+[[example]]
+name = "cube_wireframe"
+path = "ch03/02_cube_wireframe/main.rs"
+
+[[example]]
+name = "sphere_wireframe"
+path = "ch03/03_sphere_wireframe/main.rs"
+
+[[example]]
+name = "cylinder_wireframe"
+path = "ch03/04_cylinder_wireframe/main.rs"
+
+[[example]]
+name = "torus_wireframe"
+path = "ch03/05_torus_wireframe/main.rs"
