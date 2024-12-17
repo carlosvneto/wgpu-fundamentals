@@ -1,9 +1,9 @@
+use std::mem;
 use wgpu::util::DeviceExt;
 use winit::{event::WindowEvent, window::Window};
-use std::mem;
 
-use wgpu_fundamentals::wgpu_simplified as ws;
 use crate::vertex::{Vertex, VERTICES};
+use wgpu_fundamentals::wgpu_simplified as ws;
 
 pub struct State<'a> {
     init: ws::InitWgpu<'a>,
@@ -13,12 +13,15 @@ pub struct State<'a> {
 
 impl<'a> State<'a> {
     pub async fn new(window: Window) -> Self {
-        let init =  ws::InitWgpu::init_wgpu(window, 1).await;
+        let init = ws::InitWgpu::init_wgpu(window, 1).await;
 
-        let shader = init.device.create_shader_module(wgpu::include_wgsl!("triangle_gpu_buffer.wgsl"));
+        let shader = init
+            .device
+            .create_shader_module(wgpu::include_wgsl!("triangle_gpu_buffer.wgsl"));
 
-        let pipeline_layout =
-            init.device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+        let pipeline_layout = init
+            .device
+            .create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
                 label: Some("Render Pipeline Layout"),
                 bind_group_layouts: &[],
                 push_constant_ranges: &[],
@@ -39,11 +42,13 @@ impl<'a> State<'a> {
         };
         let pipeline = ppl.new(&init);
 
-        let vertex_buffer = init.device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-            label: Some("Vertex Buffer"),
-            contents: bytemuck::cast_slice(VERTICES),
-            usage: wgpu::BufferUsages::VERTEX,
-        });
+        let vertex_buffer = init
+            .device
+            .create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                label: Some("Vertex Buffer"),
+                contents: bytemuck::cast_slice(VERTICES),
+                usage: wgpu::BufferUsages::VERTEX,
+            });
 
         Self {
             init,
@@ -66,7 +71,9 @@ impl<'a> State<'a> {
             // The surface needs to be reconfigured every time the window is resized.
             self.init.config.width = new_size.width;
             self.init.config.height = new_size.height;
-            self.init.surface.configure(&self.init.device, &self.init.config);
+            self.init
+                .surface
+                .configure(&self.init.device, &self.init.config);
         }
     }
 
@@ -87,11 +94,12 @@ impl<'a> State<'a> {
             .texture
             .create_view(&wgpu::TextureViewDescriptor::default());
 
-        let mut encoder = 
-            self.init.device
-            .create_command_encoder(&wgpu::CommandEncoderDescriptor {
-                label: Some("Render Encoder"),
-            });
+        let mut encoder =
+            self.init
+                .device
+                .create_command_encoder(&wgpu::CommandEncoderDescriptor {
+                    label: Some("Render Encoder"),
+                });
 
         {
             let color_attachment = ws::create_color_attachment(&view);

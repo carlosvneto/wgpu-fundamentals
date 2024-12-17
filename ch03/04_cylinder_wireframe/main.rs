@@ -1,6 +1,6 @@
+use app::Application;
 use std::error::Error;
 use winit::event_loop::EventLoop;
-use app::Application;
 
 #[path = "../common/app.rs"]
 mod app;
@@ -14,7 +14,7 @@ fn main() {
     if args.len() > 1 {
         sample_count = args[1].parse::<u32>().unwrap();
     }
-    
+
     let title = "ch03 cylinder wireframe";
     let _ = run(title, sample_count);
 

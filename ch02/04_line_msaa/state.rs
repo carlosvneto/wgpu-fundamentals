@@ -1,6 +1,6 @@
+use std::mem;
 use wgpu::util::DeviceExt;
 use winit::{event::WindowEvent, window::Window};
-use std::mem;
 
 use wgpu_fundamentals::wgpu_simplified as ws;
 
@@ -16,17 +16,20 @@ pub struct State<'a> {
     pipeline: wgpu::RenderPipeline,
     vertex_buffer: wgpu::Buffer,
     vertex_count: u32,
-    msaa_texture_view: wgpu::TextureView
+    msaa_texture_view: wgpu::TextureView,
 }
 
 impl<'a> State<'a> {
     pub async fn new(window: Window, sample_count: u32) -> Self {
-        let init =  ws::InitWgpu::init_wgpu(window, sample_count).await;
+        let init = ws::InitWgpu::init_wgpu(window, sample_count).await;
 
-        let shader = init.device.create_shader_module(wgpu::include_wgsl!("triangle_gpu_buffer.wgsl"));
+        let shader = init
+            .device
+            .create_shader_module(wgpu::include_wgsl!("triangle_gpu_buffer.wgsl"));
 
-        let pipeline_layout =
-            init.device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
+        let pipeline_layout = init
+            .device
+            .create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
                 label: Some("Render Pipeline Layout"),
                 bind_group_layouts: &[],
                 push_constant_ranges: &[],
@@ -66,11 +69,13 @@ impl<'a> State<'a> {
             });
         }
 
-        let vertex_buffer = init.device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
-            label: Some("Vertex Buffer"),
-            contents: bytemuck::cast_slice(&vertex_data),
-            usage: wgpu::BufferUsages::VERTEX,
-        });
+        let vertex_buffer = init
+            .device
+            .create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                label: Some("Vertex Buffer"),
+                contents: bytemuck::cast_slice(&vertex_data),
+                usage: wgpu::BufferUsages::VERTEX,
+            });
 
         let vertex_count = vertex_data.len() as u32;
 
@@ -97,7 +102,9 @@ impl<'a> State<'a> {
             // The surface needs to be reconfigured every time the window is resized.
             self.init.config.width = new_size.width;
             self.init.config.height = new_size.height;
-            self.init.surface.configure(&self.init.device, &self.init.config);
+            self.init
+                .surface
+                .configure(&self.init.device, &self.init.config);
             if self.init.sample_count > 1 {
                 self.msaa_texture_view = ws::create_msaa_texture_view(&self.init);
             }
@@ -108,8 +115,7 @@ impl<'a> State<'a> {
         false
     }
 
-    pub fn update(&mut self) {
-    }
+    pub fn update(&mut self) {}
 
     pub fn render(&mut self) -> Result<(), wgpu::SurfaceError> {
         let output = self.init.surface.get_current_texture()?;
@@ -118,16 +124,21 @@ impl<'a> State<'a> {
             .texture
             .create_view(&wgpu::TextureViewDescriptor::default());
 
-        let mut encoder = 
-            self.init.device
-            .create_command_encoder(&wgpu::CommandEncoderDescriptor {
-                label: Some("Render Encoder"),
-            });
+        let mut encoder =
+            self.init
+                .device
+                .create_command_encoder(&wgpu::CommandEncoderDescriptor {
+                    label: Some("Render Encoder"),
+                });
 
         {
             let color_attach = ws::create_color_attachment(&view);
-            let msaa_attach = ws::create_msaa_color_attachment(&view, &self.msaa_texture_view);           
-            let color_attachment = if self.init.sample_count == 1 { color_attach } else { msaa_attach };
+            let msaa_attach = ws::create_msaa_color_attachment(&view, &self.msaa_texture_view);
+            let color_attachment = if self.init.sample_count == 1 {
+                color_attach
+            } else {
+                msaa_attach
+            };
 
             let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
                 label: Some("Render Pass"),

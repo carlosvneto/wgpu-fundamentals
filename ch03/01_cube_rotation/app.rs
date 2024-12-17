@@ -18,10 +18,10 @@ pub struct Application<'a> {
 
 impl<'a> Application<'a> {
     pub fn new(
-            title: &'a str,
-            sample_count: u32,
-            render_start_time: Option<time::Instant>,
-        ) -> Self {
+        title: &'a str,
+        sample_count: u32,
+        render_start_time: Option<time::Instant>,
+    ) -> Self {
         Self {
             state: None,
             title,

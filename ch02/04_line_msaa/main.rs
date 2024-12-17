@@ -15,7 +15,7 @@ fn main() {
 
     let title = "ch02 line msaa";
 
-    let _ = run(&title, sample_count); 
+    let _ = run(&title, sample_count);
 }
 
 pub fn run(title: &str, sample_count: u32) -> Result<(), Box<dyn Error>> {

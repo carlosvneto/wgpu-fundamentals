@@ -9,16 +9,16 @@ use app::Application;
 fn main() {
     let title = "ch01 wgpu info";
 
-    let _ = run(&title); 
+    let _ = run(&title);
 }
 
 pub fn run(title: &str) -> Result<(), Box<dyn Error>> {
-  env_logger::init();
+    env_logger::init();
 
-  let event_loop = EventLoop::builder().build()?;
-  let mut app = Application::new(title);
+    let event_loop = EventLoop::builder().build()?;
+    let mut app = Application::new(title);
 
-  event_loop.run_app(&mut app)?;
+    event_loop.run_app(&mut app)?;
 
-  Ok(())
+    Ok(())
 }

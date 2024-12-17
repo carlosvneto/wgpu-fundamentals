@@ -1,13 +1,14 @@
-use wgpu::util::DeviceExt;
-use winit::{event::WindowEvent, event::KeyEvent, event::ElementState,
-            window::Window,
-            keyboard::Key, keyboard::NamedKey};
-use std::mem;
-use cgmath::Matrix4;
 use bytemuck::cast_slice;
+use cgmath::Matrix4;
 use rand;
+use std::mem;
+use wgpu::util::DeviceExt;
+use winit::{
+    event::ElementState, event::KeyEvent, event::WindowEvent, keyboard::Key, keyboard::NamedKey,
+    window::Window,
+};
 
-use crate::vertex::{Vertex, create_vertices};
+use crate::vertex::{create_vertices, Vertex};
 use wgpu_fundamentals::wgpu_simplified as ws;
 
 pub struct State<'a> {
@@ -35,9 +36,11 @@ pub struct State<'a> {
 
 impl<'a> State<'a> {
     pub async fn new(window: Window, sample_count: u32) -> Self {
-        let init =  ws::InitWgpu::init_wgpu(window, sample_count).await;
+        let init = ws::InitWgpu::init_wgpu(window, sample_count).await;
 
-        let shader = init.device.create_shader_module(wgpu::include_wgsl!("../common/unlit.wgsl"));
+        let shader = init
+            .device
+            .create_shader_module(wgpu::include_wgsl!("../common/unlit.wgsl"));
 
         // uniform data
         let camera_position = (3.0, 1.5, 3.0).into();
@@ -168,7 +171,6 @@ impl<'a> State<'a> {
                 contents: bytemuck::cast_slice(&index_data2),
                 usage: wgpu::BufferUsages::INDEX | wgpu::BufferUsages::COPY_DST,
             });
-     
 
         Self {
             init,
@@ -208,7 +210,9 @@ impl<'a> State<'a> {
             // The surface needs to be reconfigured every time the window is resized.
             self.init.config.width = new_size.width;
             self.init.config.height = new_size.height;
-            self.init.surface.configure(&self.init.device, &self.init.config);
+            self.init
+                .surface
+                .configure(&self.init.device, &self.init.config);
 
             self.project_mat =
                 ws::create_projection_mat(new_size.width as f32 / new_size.height as f32, true);
@@ -222,7 +226,12 @@ impl<'a> State<'a> {
     pub fn input(&mut self, event: &WindowEvent) -> bool {
         match event {
             WindowEvent::KeyboardInput {
-                event: KeyEvent { logical_key: key, state: ElementState::Pressed, .. },
+                event:
+                    KeyEvent {
+                        logical_key: key,
+                        state: ElementState::Pressed,
+                        ..
+                    },
                 ..
             } => match key.as_ref() {
                 Key::Named(NamedKey::Control) => {
@@ -232,8 +241,8 @@ impl<'a> State<'a> {
                         0,
                         bytemuck::cast_slice(scolor.as_ref()),
                     );
-                    return true
-                },
+                    return true;
+                }
                 Key::Named(NamedKey::Alt) => {
                     let wcolor: [f32; 3] = [rand::random(), rand::random(), rand::random()];
                     self.init.queue.write_buffer(
@@ -241,66 +250,66 @@ impl<'a> State<'a> {
                         0,
                         bytemuck::cast_slice(wcolor.as_ref()),
                     );
-                    return true
-                },
+                    return true;
+                }
                 Key::Named(NamedKey::Space) => {
                     self.plot_type = (self.plot_type + 1) % 3;
-                    return true
-                },
+                    return true;
+                }
                 Key::Character("q") => {
                     self.r_torus += 0.05;
                     self.update_buffers = true;
-                    return true
-                },
+                    return true;
+                }
                 Key::Character("a") => {
                     self.r_torus -= 0.05;
                     self.update_buffers = true;
-                    return true
-                },
+                    return true;
+                }
                 Key::Character("w") => {
                     self.r_torus -= 0.05;
                     self.update_buffers = true;
-                    return true
-                },
+                    return true;
+                }
                 Key::Character("s") => {
                     self.r_tube -= 0.02;
                     self.update_buffers = true;
-                    return true
-                },
+                    return true;
+                }
                 Key::Character("e") => {
                     self.u_segments += 1;
                     self.recreate_buffers = true;
-                    return true
-                },
+                    return true;
+                }
                 Key::Character("d") => {
                     self.u_segments -= 1;
                     self.recreate_buffers = true;
-                    return true
-                },
+                    return true;
+                }
                 Key::Character("r") => {
                     self.v_segments += 1;
                     self.recreate_buffers = true;
-                    return true
-                },
+                    return true;
+                }
                 Key::Character("f") => {
                     self.v_segments -= 1;
                     self.recreate_buffers = true;
-                    return true
-                },
+                    return true;
+                }
                 Key::Character("t") => {
                     self.rotation_speed += 0.1;
-                    return true
-                },
+                    return true;
+                }
                 Key::Character("g") => {
                     self.rotation_speed -= 0.1;
                     if self.rotation_speed < 0.0 {
                         self.rotation_speed = 0.0;
                     }
-                    return true
-                },
-                _ => false
+                    return true;
+                }
+                _ => false,
             },
-            _ => false
+            _ => false,
         }
     }
 
@@ -319,7 +328,9 @@ impl<'a> State<'a> {
         if self.update_buffers {
             let (pos, _ind, _ind2) =
                 create_vertices(self.r_torus, self.r_tube, self.u_segments, self.v_segments);
-            self.init.queue.write_buffer(&self.vertex_buffer, 0, cast_slice(&pos));
+            self.init
+                .queue
+                .write_buffer(&self.vertex_buffer, 0, cast_slice(&pos));
             self.update_buffers = false;
         }
 
@@ -330,7 +341,10 @@ impl<'a> State<'a> {
             self.indices_lens = [ind.len() as u32, ind2.len() as u32];
 
             self.vertex_buffer.destroy();
-            self.vertex_buffer = self.init.device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+            self.vertex_buffer =
+                self.init
+                    .device
+                    .create_buffer_init(&wgpu::util::BufferInitDescriptor {
                         label: Some("Vertex Buffer"),
                         contents: cast_slice(&pos),
                         usage: wgpu::BufferUsages::VERTEX | wgpu::BufferUsages::COPY_DST,
@@ -339,7 +353,10 @@ impl<'a> State<'a> {
             let indices_data = [ind, ind2];
             for i in 0..2 {
                 self.index_buffers[i].destroy();
-                self.index_buffers[i] = self.init.device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
+                self.index_buffers[i] =
+                    self.init
+                        .device
+                        .create_buffer_init(&wgpu::util::BufferInitDescriptor {
                             label: Some("Index Buffer"),
                             contents: cast_slice(&indices_data[i]),
                             usage: wgpu::BufferUsages::INDEX | wgpu::BufferUsages::COPY_DST,
@@ -356,11 +373,12 @@ impl<'a> State<'a> {
             .texture
             .create_view(&wgpu::TextureViewDescriptor::default());
 
-        let mut encoder = 
-            self.init.device
-            .create_command_encoder(&wgpu::CommandEncoderDescriptor {
-                label: Some("Render Encoder"),
-            });
+        let mut encoder =
+            self.init
+                .device
+                .create_command_encoder(&wgpu::CommandEncoderDescriptor {
+                    label: Some("Render Encoder"),
+                });
 
         {
             let color_attach = ws::create_color_attachment(&view);
