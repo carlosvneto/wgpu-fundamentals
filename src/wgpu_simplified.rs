@@ -1,7 +1,7 @@
-use cgmath::{ortho, perspective, Matrix4, Point3, Rad, Vector3};
-use std::f32::consts::PI;
 use std::sync::Arc;
 use winit::window::Window;
+use std::f32::consts::PI;
+use cgmath::{Matrix4, perspective, Rad, ortho, Vector3, Point3};
 
 // region: wgpu initialization
 pub struct InitWgpu<'a> {
@@ -16,12 +16,12 @@ pub struct InitWgpu<'a> {
 }
 
 impl<'a> InitWgpu<'a> {
-    pub async fn init_wgpu(window: Window, sample_count: u32) -> Self {
+    pub async fn init_wgpu(window: Window, sample_count:u32) -> Self {
         let arc_window = Arc::new(window);
-
+        
         let instance = wgpu::Instance::new(wgpu::InstanceDescriptor {
-            backends: wgpu::Backends::all(),
-            ..Default::default()
+          backends: wgpu::Backends::all(),
+          ..Default::default()
         });
 
         // Surface
@@ -29,28 +29,28 @@ impl<'a> InitWgpu<'a> {
 
         // Adapter:
         let adapter = instance
-            .request_adapter(&wgpu::RequestAdapterOptions {
-                power_preference: wgpu::PowerPreference::default(),
-                compatible_surface: Some(&surface),
-                force_fallback_adapter: false,
-                ..Default::default()
-            })
-            .await
-            .unwrap();
+          .request_adapter(&wgpu::RequestAdapterOptions {
+            power_preference: wgpu::PowerPreference::default(),
+            compatible_surface: Some(&surface),
+            force_fallback_adapter: false,
+            ..Default::default()
+          })
+          .await
+          .unwrap();
 
         // Logical Device and Queue
         let (device, queue) = adapter
-            .request_device(
-                &wgpu::DeviceDescriptor {
-                    label: None,
-                    required_features: wgpu::Features::empty(),
-                    required_limits: wgpu::Limits::default(),
-                    ..Default::default()
-                },
-                None,
-            )
-            .await
-            .unwrap();
+          .request_device(
+            &wgpu::DeviceDescriptor {
+              label: None,
+              required_features: wgpu::Features::empty(),
+              required_limits: wgpu::Limits::default(),
+              ..Default::default()
+            },
+            None,
+          )
+          .await
+          .unwrap();
 
         let size = arc_window.inner_size();
 
@@ -59,19 +59,19 @@ impl<'a> InitWgpu<'a> {
 
         // Defines how a Surface creates a SurfaceTexture.
         let config = wgpu::SurfaceConfiguration {
-            usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
-            format,
-            width: size.width,
-            height: size.height,
-            present_mode: wgpu::PresentMode::Fifo,
-            alpha_mode: surface_caps.alpha_modes[0],
-            desired_maximum_frame_latency: 2,
-            view_formats: vec![],
+          usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
+          format,
+          width: size.width,
+          height: size.height,
+          present_mode: wgpu::PresentMode::Fifo, 
+          alpha_mode: surface_caps.alpha_modes[0],
+          desired_maximum_frame_latency: 2,
+          view_formats: vec![],
         };
 
         surface.configure(&device, &config);
-
-        Self {
+     
+        Self{
             surface,
             adapter,
             device,
@@ -87,125 +87,120 @@ impl<'a> InitWgpu<'a> {
 
 // region: pipelines
 pub struct IRenderPipeline<'a> {
-    pub shader: Option<&'a wgpu::ShaderModule>,
-    pub vs_shader: Option<&'a wgpu::ShaderModule>,
-    pub fs_shader: Option<&'a wgpu::ShaderModule>,
-    pub vertex_buffer_layout: &'a [wgpu::VertexBufferLayout<'a>],
-    pub pipeline_layout: Option<&'a wgpu::PipelineLayout>,
-    pub topology: wgpu::PrimitiveTopology,
-    pub strip_index_format: Option<wgpu::IndexFormat>,
-    pub cull_mode: Option<wgpu::Face>,
-    pub is_depth_stencil: bool,
-    pub vs_entry: String,
-    pub fs_entry: String,
+  pub shader: Option<&'a wgpu::ShaderModule>,
+  pub vs_shader: Option<&'a wgpu::ShaderModule>,
+  pub fs_shader: Option<&'a wgpu::ShaderModule>,
+  pub vertex_buffer_layout: &'a [wgpu::VertexBufferLayout<'a>],
+  pub pipeline_layout: Option<&'a wgpu::PipelineLayout>,
+  pub topology: wgpu::PrimitiveTopology,
+  pub strip_index_format: Option<wgpu::IndexFormat>,
+  pub cull_mode: Option<wgpu::Face>,
+  pub is_depth_stencil: bool,
+  pub vs_entry: String,
+  pub fs_entry: String,
 }
 
 impl Default for IRenderPipeline<'_> {
-    fn default() -> Self {
-        Self {
-            shader: None,
-            vs_shader: None,
-            fs_shader: None,
-            vertex_buffer_layout: &[],
-            pipeline_layout: None,
-            topology: wgpu::PrimitiveTopology::TriangleList,
-            strip_index_format: None,
-            cull_mode: None,
-            is_depth_stencil: true,
-            vs_entry: String::from("vs_main"),
-            fs_entry: String::from("fs_main"),
-        }
-    }
+  fn default() -> Self {
+      Self { 
+          shader: None, 
+          vs_shader: None,
+          fs_shader: None,
+          vertex_buffer_layout: &[],
+          pipeline_layout: None,
+          topology: wgpu::PrimitiveTopology::TriangleList, 
+          strip_index_format: None, 
+          cull_mode: None, 
+          is_depth_stencil: true, 
+          vs_entry: String::from("vs_main"), 
+          fs_entry: String::from("fs_main"),            
+      }
+  }
 }
 
-impl IRenderPipeline<'_> {
-    pub fn new(&mut self, init: &InitWgpu) -> wgpu::RenderPipeline {
-        if self.shader.is_some() {
-            self.vs_shader = self.shader;
-            self.fs_shader = self.shader;
-        }
+impl IRenderPipeline<'_> {    
+  pub fn new(&mut self, init: &InitWgpu) -> wgpu::RenderPipeline {
+      if self.shader.is_some() {
+          self.vs_shader = self.shader;
+          self.fs_shader = self.shader;
+      }
 
-        let mut depth_stencil: Option<wgpu::DepthStencilState> = None;
-        if self.is_depth_stencil {
-            depth_stencil = Some(wgpu::DepthStencilState {
-                format: wgpu::TextureFormat::Depth24Plus,
-                depth_write_enabled: true,
-                depth_compare: wgpu::CompareFunction::LessEqual,
-                stencil: wgpu::StencilState::default(),
-                bias: wgpu::DepthBiasState::default(),
-            });
-        }
+      let mut depth_stencil:Option<wgpu::DepthStencilState> = None;
+      if self.is_depth_stencil {
+          depth_stencil = Some(wgpu::DepthStencilState {
+              format: wgpu::TextureFormat::Depth24Plus,
+              depth_write_enabled: true,
+              depth_compare: wgpu::CompareFunction::LessEqual,
+              stencil: wgpu::StencilState::default(),
+              bias: wgpu::DepthBiasState::default(),
+          });
+      } 
 
-        init.device
-            .create_render_pipeline(&wgpu::RenderPipelineDescriptor {
-                label: Some("Render Pipeline"),
-                layout: Some(&self.pipeline_layout.unwrap()),
-                vertex: wgpu::VertexState {
-                    module: &self.vs_shader.as_ref().unwrap(),
-                    entry_point: Some(&self.vs_entry),
-                    buffers: &self.vertex_buffer_layout,
-                    compilation_options: wgpu::PipelineCompilationOptions::default(),
-                },
-                fragment: Some(wgpu::FragmentState {
-                    module: &self.fs_shader.as_ref().unwrap(),
-                    entry_point: Some(&self.fs_entry),
-                    targets: &[Some(init.config.format.into())],
-                    compilation_options: wgpu::PipelineCompilationOptions::default(),
-                }),
-                primitive: wgpu::PrimitiveState {
-                    topology: self.topology,
-                    strip_index_format: self.strip_index_format,
-                    ..Default::default()
-                },
-                depth_stencil,
-                multisample: wgpu::MultisampleState {
-                    count: init.sample_count,
-                    ..Default::default()
-                },
-                multiview: None,
-                cache: None,
-            })
-    }
+      init.device.create_render_pipeline(&wgpu::RenderPipelineDescriptor {
+          label: Some("Render Pipeline"),
+          layout: Some(&self.pipeline_layout.unwrap()),
+          vertex: wgpu::VertexState {
+              module: &self.vs_shader.as_ref().unwrap(),
+              entry_point: Some(&self.vs_entry),
+              buffers: &self.vertex_buffer_layout,
+              compilation_options: wgpu::PipelineCompilationOptions::default(),
+          },
+          fragment: Some(wgpu::FragmentState {
+              module: &self.fs_shader.as_ref().unwrap(),
+              entry_point: Some(&self.fs_entry),
+              targets: &[Some(init.config.format.into())],
+              compilation_options: wgpu::PipelineCompilationOptions::default(),
+          }),
+          primitive: wgpu::PrimitiveState {
+              topology: self.topology,
+              strip_index_format: self.strip_index_format,
+              ..Default::default()
+          },
+          depth_stencil,
+          multisample: wgpu::MultisampleState{
+              count: init.sample_count,
+              ..Default::default()
+          },
+          multiview: None,
+          cache: None,
+      })
+  }   
 }
 // endregion: pipelines
 
 // region: views and attachments
-pub fn create_color_attachment<'a>(
-    texture_view: &'a wgpu::TextureView,
-) -> wgpu::RenderPassColorAttachment<'a> {
-    wgpu::RenderPassColorAttachment {
-        view: texture_view,
-        resolve_target: None,
-        ops: wgpu::Operations {
-            load: wgpu::LoadOp::Clear(wgpu::Color::BLACK),
-            store: wgpu::StoreOp::Store,
-        },
-    }
+pub fn create_color_attachment<'a>(texture_view: &'a wgpu::TextureView) -> wgpu::RenderPassColorAttachment<'a> {
+  wgpu::RenderPassColorAttachment {
+      view: texture_view,
+      resolve_target: None,
+      ops: wgpu::Operations {
+          load: wgpu::LoadOp::Clear(wgpu::Color::BLACK),
+          store: wgpu::StoreOp::Store,
+      },
+  }
 }
 
-pub fn create_msaa_texture_view(init: &InitWgpu) -> wgpu::TextureView {
-    let msaa_texture = init.device.create_texture(&wgpu::TextureDescriptor {
-        size: wgpu::Extent3d {
-            width: init.config.width,
-            height: init.config.height,
-            depth_or_array_layers: 1,
-        },
-        mip_level_count: 1,
-        sample_count: init.sample_count,
-        dimension: wgpu::TextureDimension::D2,
-        format: init.config.format,
-        usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
-        label: None,
-        view_formats: &[],
-    });
-
-    msaa_texture.create_view(&wgpu::TextureViewDescriptor::default())
+pub fn create_msaa_texture_view(init: &InitWgpu) -> wgpu::TextureView{
+  let msaa_texture = init.device.create_texture(&wgpu::TextureDescriptor {
+      size: wgpu::Extent3d {
+          width: init.config.width,
+          height: init.config.height,
+          depth_or_array_layers: 1,
+      },
+      mip_level_count: 1,
+      sample_count: init.sample_count,
+      dimension: wgpu::TextureDimension::D2,
+      format: init.config.format,
+      usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
+      label: None,
+      view_formats: &[],
+  });
+  
+  msaa_texture.create_view(&wgpu::TextureViewDescriptor::default())
 }
 
-pub fn create_msaa_color_attachment<'a>(
-    texture_view: &'a wgpu::TextureView,
-    msaa_view: &'a wgpu::TextureView,
-) -> wgpu::RenderPassColorAttachment<'a> {
+pub fn create_msaa_color_attachment<'a>(texture_view: &'a wgpu::TextureView, msaa_view: &'a wgpu::TextureView) 
+-> wgpu::RenderPassColorAttachment<'a> {
     wgpu::RenderPassColorAttachment {
         view: msaa_view,
         resolve_target: Some(texture_view),
@@ -219,140 +214,207 @@ pub fn create_msaa_color_attachment<'a>(
 }
 
 pub fn create_depth_view(init: &InitWgpu) -> wgpu::TextureView {
-    let depth_texture = init.device.create_texture(&wgpu::TextureDescriptor {
+  let depth_texture = init.device.create_texture(&wgpu::TextureDescriptor {
+      size: wgpu::Extent3d {
+          width: init.config.width,
+          height: init.config.height,
+          depth_or_array_layers: 1,
+      },
+      mip_level_count: 1,
+      sample_count: init.sample_count,
+      dimension: wgpu::TextureDimension::D2,
+      format:wgpu::TextureFormat::Depth24Plus,
+      usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
+      label: None,
+      view_formats: &[],
+  });
+  
+  depth_texture.create_view(&wgpu::TextureViewDescriptor::default())
+}
+
+pub fn create_depth_stencil_attachment<'a>(depth_view: &'a wgpu::TextureView) -> wgpu::RenderPassDepthStencilAttachment<'a> {
+  wgpu::RenderPassDepthStencilAttachment {
+      view: depth_view,
+      depth_ops: Some(wgpu::Operations {
+          load: wgpu::LoadOp::Clear(1.0),
+          store: wgpu::StoreOp::Discard,
+      }),
+      stencil_ops: None,
+  }
+}
+
+pub fn create_shadow_texture_view(init: &InitWgpu, width:u32, height:u32) -> wgpu::TextureView {
+    let shadow_depth_texture = init.device.create_texture(&wgpu::TextureDescriptor {
         size: wgpu::Extent3d {
-            width: init.config.width,
-            height: init.config.height,
+            width,
+            height,
             depth_or_array_layers: 1,
         },
         mip_level_count: 1,
         sample_count: init.sample_count,
         dimension: wgpu::TextureDimension::D2,
-        format: wgpu::TextureFormat::Depth24Plus,
-        usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
+        format:wgpu::TextureFormat::Depth24Plus,
+        usage: wgpu::TextureUsages::RENDER_ATTACHMENT | wgpu::TextureUsages::TEXTURE_BINDING,
         label: None,
         view_formats: &[],
     });
 
-    depth_texture.create_view(&wgpu::TextureViewDescriptor::default())
-}
-
-pub fn create_depth_stencil_attachment<'a>(
-    depth_view: &'a wgpu::TextureView,
-) -> wgpu::RenderPassDepthStencilAttachment<'a> {
-    wgpu::RenderPassDepthStencilAttachment {
-        view: depth_view,
-        depth_ops: Some(wgpu::Operations {
-            load: wgpu::LoadOp::Clear(1.0),
-            store: wgpu::StoreOp::Discard,
-        }),
-        stencil_ops: None,
-    }
+    shadow_depth_texture.create_view(&wgpu::TextureViewDescriptor::default())
 }
 // endregion: views and attachments
 
 // region: tranformation
 pub const OPENGL_TO_WGPU_MATRIX: Matrix4<f32> = Matrix4::new(
-    1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.5, 0.0, 0.0, 0.0, 0.5, 1.0,
+  1.0, 0.0, 0.0, 0.0,
+  0.0, 1.0, 0.0, 0.0,
+  0.0, 0.0, 0.5, 0.0,
+  0.0, 0.0, 0.5, 1.0,
 );
 
-pub fn create_model_mat(
-    translation: [f32; 3],
-    rotation: [f32; 3],
-    scaling: [f32; 3],
-) -> Matrix4<f32> {
-    // create transformation matrices
-    let trans_mat =
-        Matrix4::from_translation(Vector3::new(translation[0], translation[1], translation[2]));
-    let rotate_mat_x = Matrix4::from_angle_x(Rad(rotation[0]));
-    let rotate_mat_y = Matrix4::from_angle_y(Rad(rotation[1]));
-    let rotate_mat_z = Matrix4::from_angle_z(Rad(rotation[2]));
-    let scale_mat = Matrix4::from_nonuniform_scale(scaling[0], scaling[1], scaling[2]);
+pub fn create_model_mat(translation:[f32; 3], rotation:[f32; 3], scaling:[f32; 3]) -> Matrix4<f32> {
+  // create transformation matrices
+  let trans_mat = Matrix4::from_translation(Vector3::new(translation[0], translation[1], translation[2]));
+  let rotate_mat_x = Matrix4::from_angle_x(Rad(rotation[0]));
+  let rotate_mat_y = Matrix4::from_angle_y(Rad(rotation[1]));
+  let rotate_mat_z = Matrix4::from_angle_z(Rad(rotation[2]));
+  let scale_mat = Matrix4::from_nonuniform_scale(scaling[0], scaling[1], scaling[2]);
 
-    // combine all transformation matrices together to form a final transform matrix: model matrix
-    let model_mat = trans_mat * rotate_mat_z * rotate_mat_y * rotate_mat_x * scale_mat;
+  // combine all transformation matrices together to form a final transform matrix: model matrix
+  let model_mat = trans_mat * rotate_mat_z * rotate_mat_y * rotate_mat_x * scale_mat;
 
-    // return final model matrix
-    model_mat
+  // return final model matrix
+  model_mat
 }
 
-pub fn create_projection_mat(aspect: f32, is_perspective: bool) -> Matrix4<f32> {
-    let project_mat: Matrix4<f32>;
-    if is_perspective {
-        project_mat = OPENGL_TO_WGPU_MATRIX * perspective(Rad(2.0 * PI / 5.0), aspect, 0.1, 1000.0);
-    } else {
-        project_mat = OPENGL_TO_WGPU_MATRIX * ortho(-4.0, 4.0, -3.0, 3.0, -1.0, 6.0);
-    }
-    project_mat
+pub fn create_view_mat(camera_position: Point3<f32>, look_direction: Point3<f32>, up_direction: Vector3<f32>) -> Matrix4<f32> {
+    Matrix4::look_at_rh(camera_position, look_direction, up_direction)
 }
 
-pub fn create_vp_mat(
-    camera_position: Point3<f32>,
-    look_direction: Point3<f32>,
-    up_direction: Vector3<f32>,
-    aspect: f32,
-) -> (Matrix4<f32>, Matrix4<f32>, Matrix4<f32>) {
-    // construct view matrix
-    let view_mat = Matrix4::look_at_rh(camera_position, look_direction, up_direction);
+pub fn create_projection_mat(aspect:f32, is_perspective:bool) -> Matrix4<f32> {
+  let project_mat:Matrix4<f32>;
+  if is_perspective {
+      project_mat = OPENGL_TO_WGPU_MATRIX * perspective(Rad(2.0*PI/5.0), aspect, 0.1, 1000.0);
+  } else {
+      project_mat = OPENGL_TO_WGPU_MATRIX * ortho(-4.0, 4.0, -3.0, 3.0, -1.0, 6.0);
+  }
+  project_mat
+}
 
-    // construct projection matrix
-    let project_mat = OPENGL_TO_WGPU_MATRIX * perspective(Rad(2.0 * PI / 5.0), aspect, 0.1, 1000.0);
+pub fn create_vp_mat(camera_position: Point3<f32>, look_direction: Point3<f32>, up_direction: Vector3<f32>,
+  aspect:f32) -> (Matrix4<f32>, Matrix4<f32>, Matrix4<f32>) {
+  
+  // construct view matrix
+  let view_mat = Matrix4::look_at_rh(camera_position, look_direction, up_direction);     
 
-    // contruct view-projection matrix
-    let vp_mat = project_mat * view_mat;
+  // construct projection matrix
+  let project_mat = OPENGL_TO_WGPU_MATRIX * perspective(Rad(2.0*PI/5.0), aspect, 0.1, 1000.0);
+ 
+  // contruct view-projection matrix
+  let vp_mat = project_mat * view_mat;
+ 
+  // return various matrices
+  (view_mat, project_mat, vp_mat)
+}
 
-    // return various matrices
-    (view_mat, project_mat, vp_mat)
+pub fn create_ortho_mat(left: f32, right: f32, bottom: f32, top: f32, near: f32, far: f32) -> Matrix4<f32> {
+    OPENGL_TO_WGPU_MATRIX * ortho(left, right, bottom, top, near, far)    
 }
 // endregion: tranformation
 
 // region: bind groups
-pub fn create_bind_group_layout(
-    device: &wgpu::Device,
-    shader_stages: Vec<wgpu::ShaderStages>,
+pub fn create_bind_group_layout_storage(
+    device: &wgpu::Device, 
+    shader_stages: Vec<wgpu::ShaderStages>, 
+    binding_types: Vec<wgpu::BufferBindingType>
 ) -> wgpu::BindGroupLayout {
     let mut entries = vec![];
-
+    
     for i in 0..shader_stages.len() {
         entries.push(wgpu::BindGroupLayoutEntry {
             binding: i as u32,
             visibility: shader_stages[i],
             ty: wgpu::BindingType::Buffer {
-                ty: wgpu::BufferBindingType::Uniform,
+                ty: binding_types[i],
                 has_dynamic_offset: false,
                 min_binding_size: None,
             },
             count: None,
         });
     }
-
-    device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor {
+    
+    device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor{
         entries: &entries,
-        label: Some("Uniform Bind Group Layout"),
+        label: Some("Bind Group Layout"), 
     })
 }
 
-pub fn create_bind_group(
+pub fn create_bind_group_storage(
     device: &wgpu::Device,
     shader_stages: Vec<wgpu::ShaderStages>,
-    resources: &[wgpu::BindingResource<'_>],
-) -> (wgpu::BindGroupLayout, wgpu::BindGroup) {
-    let entries: Vec<_> = resources
-        .iter()
-        .enumerate()
-        .map(|(i, resource)| wgpu::BindGroupEntry {
+    binding_types: Vec<wgpu::BufferBindingType>,
+    resources: &[wgpu::BindingResource<'_>]
+) -> ( wgpu::BindGroupLayout, wgpu::BindGroup) {
+    let entries: Vec<_> = resources.iter().enumerate().map(|(i, resource)| {
+        wgpu::BindGroupEntry {
             binding: i as u32,
             resource: resource.clone(),
-        })
-        .collect();
+        }
+    }).collect();
 
-    let layout = create_bind_group_layout(device, shader_stages);
+    let layout = create_bind_group_layout_storage(device, shader_stages, binding_types);
     let bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
         layout: &layout,
         entries: &entries,
-        label: Some("Uniform Bind Group"),
+        label: Some("Bind Group"), 
     });
 
     (layout, bind_group)
+}
+
+pub fn create_bind_group_layout(
+  device: &wgpu::Device, 
+  shader_stages: Vec<wgpu::ShaderStages>
+) -> wgpu::BindGroupLayout {
+  let mut entries = vec![];
+  
+  for i in 0..shader_stages.len() {
+      entries.push(wgpu::BindGroupLayoutEntry {
+          binding: i as u32,
+          visibility: shader_stages[i],
+          ty: wgpu::BindingType::Buffer {
+              ty: wgpu::BufferBindingType::Uniform,
+              has_dynamic_offset: false,
+              min_binding_size: None,
+          },
+          count: None,
+      });
+  }
+  
+  device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor{
+      entries: &entries,
+      label: Some("Uniform Bind Group Layout"),
+  })
+}
+
+pub fn create_bind_group(
+  device: &wgpu::Device,
+  shader_stages: Vec<wgpu::ShaderStages>,
+  resources: &[wgpu::BindingResource<'_>]
+) -> ( wgpu::BindGroupLayout, wgpu::BindGroup) {
+  let entries: Vec<_> = resources.iter().enumerate().map(|(i, resource)| {
+      wgpu::BindGroupEntry {
+          binding: i as u32,
+          resource: resource.clone(),
+      }
+  }).collect();
+
+  let layout = create_bind_group_layout(device, shader_stages);
+  let bind_group = device.create_bind_group(&wgpu::BindGroupDescriptor {
+      layout: &layout,
+      entries: &entries,
+      label: Some("Uniform Bind Group"),
+  });
+
+  (layout, bind_group)
 }
 // endregion: bind groups
