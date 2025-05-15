@@ -100,6 +100,9 @@ impl<'a> ApplicationHandler for Application<'a> {
                     Err(wgpu::SurfaceError::Timeout) => {
                         println!("Surface timeout");
                     }
+                    Err(wgpu::SurfaceError::Other) => {
+                        println!("Surface error");
+                    }
                 }
             }
             _ => {}

@@ -21,7 +21,7 @@ impl<'a> InitWgpu<'a> {
     pub async fn init_wgpu(window: Window, sample_count: u32) -> Self {
         let arc_window = Arc::new(window);
 
-        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor {
+        let instance = wgpu::Instance::new(&wgpu::InstanceDescriptor {
             backends: wgpu::Backends::all(),
             ..Default::default()
         });
@@ -49,7 +49,6 @@ impl<'a> InitWgpu<'a> {
                     required_limits: wgpu::Limits::default(),
                     ..Default::default()
                 },
-                None,
             )
             .await
             .unwrap();
