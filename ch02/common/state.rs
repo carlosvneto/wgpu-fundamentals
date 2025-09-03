@@ -1,10 +1,11 @@
+use std::sync::Arc;
 use wgpu::{IndexFormat, PrimitiveTopology, ShaderSource};
 use winit::{event::WindowEvent, window::Window};
 
 use wgpu_fundamentals::wgpu_simplified as ws;
 
-pub struct State<'a> {
-    init: ws::InitWgpu<'a>,
+pub struct State {
+    init: ws::InitWgpu,
     pipeline: wgpu::RenderPipeline,
     num_vertices: u32,
 }
@@ -15,9 +16,9 @@ pub struct Inputs<'a> {
     pub strip_index_format: Option<IndexFormat>,
 }
 
-impl<'a> State<'a> {
-    pub async fn new(window: Window, inputs: &Inputs<'_>, num_vertices: u32) -> Self {
-        let init = ws::InitWgpu::init_wgpu(window, 1).await;
+impl State {
+    pub async fn new(window: Arc<Window>, inputs: &Inputs<'_>, num_vertices: u32) -> Self {
+        let init = ws::InitWgpu::init_wgpu(window.clone(), 1).await;
 
         // Load the shaders from disk
         let shader = init

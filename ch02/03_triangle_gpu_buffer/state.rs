@@ -1,18 +1,19 @@
 use std::mem;
+use std::sync::Arc;
 use wgpu::util::DeviceExt;
 use winit::{event::WindowEvent, window::Window};
 
 use crate::vertex::{Vertex, VERTICES};
 use wgpu_fundamentals::wgpu_simplified as ws;
 
-pub struct State<'a> {
-    init: ws::InitWgpu<'a>,
+pub struct State {
+    init: ws::InitWgpu,
     pipeline: wgpu::RenderPipeline,
     vertex_buffer: wgpu::Buffer,
 }
 
-impl<'a> State<'a> {
-    pub async fn new(window: Window) -> Self {
+impl State {
+    pub async fn new(window: Arc<Window>) -> Self {
         let init = ws::InitWgpu::init_wgpu(window, 1).await;
 
         let shader = init

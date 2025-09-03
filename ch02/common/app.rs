@@ -10,14 +10,14 @@ use crate::state::Inputs;
 use crate::state::State;
 
 pub struct Application<'a> {
-    state: Option<State<'a>>,
+    state: Option<State>,
     title: &'a str,
-    inputs: Inputs<'a>,
+    inputs: Inputs<'static>,
     num_vertices: u32,
 }
 
 impl<'a> Application<'a> {
-    pub fn new(title: &'a str, inputs: Inputs<'a>, num_vertices: u32) -> Self {
+    pub fn new(title: &'a str, inputs: Inputs<'static>, num_vertices: u32) -> Self {
         Self {
             state: None,
             title,
@@ -35,10 +35,8 @@ impl<'a> ApplicationHandler for Application<'a> {
             .create_window(window_attributes)
             .expect("Failed to create window");
 
-        let state =
-            pollster::block_on(async { State::new(window, &self.inputs, self.num_vertices).await });
-
-        self.state = Some(state);
+        self.state =
+            Some(pollster::block_on(async { State::new(window.into(), &self.inputs, self.num_vertices).await }));
     }
 
     fn window_event(

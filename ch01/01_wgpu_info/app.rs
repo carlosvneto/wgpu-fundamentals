@@ -8,18 +8,18 @@ use winit::{
 
 use crate::state::State;
 
-pub struct Application<'a> {
-    state: Option<State<'a>>,
-    title: &'a str,
+pub struct Application {
+    state: Option<State>,
+    title: &'static str,
 }
 
-impl<'a> Application<'a> {
-    pub fn new(title: &'a str) -> Self {
+impl Application {
+    pub fn new(title: &'static str) -> Self {
         Self { state: None, title }
     }
 }
 
-impl<'a> ApplicationHandler for Application<'a> {
+impl<'a> ApplicationHandler for Application {
     fn resumed(&mut self, event_loop: &ActiveEventLoop) {
         let window_attributes = Window::default_attributes().with_title(self.title);
 
@@ -27,9 +27,7 @@ impl<'a> ApplicationHandler for Application<'a> {
             .create_window(window_attributes)
             .expect("Failed to create window");
 
-        let state = pollster::block_on(async { State::new(window).await });
-
-        self.state = Some(state);
+        self.state = Some(pollster::block_on(async { State::new(window.into()).await }));
     }
 
     fn window_event(

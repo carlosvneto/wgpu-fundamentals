@@ -1,4 +1,3 @@
-use std::error::Error;
 use winit::event_loop::EventLoop;
 
 mod app;
@@ -18,7 +17,7 @@ fn main() {
     let _ = run(&title, sample_count);
 }
 
-pub fn run(title: &str, sample_count: u32) -> Result<(), Box<dyn Error>> {
+pub fn run(title: &str, sample_count: u32) -> anyhow::Result<()> {
     env_logger::init();
 
     let event_loop = EventLoop::builder().build()?;

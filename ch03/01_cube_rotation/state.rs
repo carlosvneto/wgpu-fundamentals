@@ -1,3 +1,4 @@
+use std::sync::Arc;
 use cgmath::Matrix4;
 use std::mem;
 use wgpu::util::DeviceExt;
@@ -8,8 +9,8 @@ use winit::{
 use crate::vertex::{create_vertices, Vertex};
 use wgpu_fundamentals::wgpu_simplified as ws;
 
-pub struct State<'a> {
-    init: ws::InitWgpu<'a>,
+pub struct State {
+    init: ws::InitWgpu,
     pipeline: wgpu::RenderPipeline,
     vertex_buffer: wgpu::Buffer,
     index_buffer: wgpu::Buffer,
@@ -23,8 +24,8 @@ pub struct State<'a> {
     rotation_speed: f32,
 }
 
-impl<'a> State<'a> {
-    pub async fn new(window: Window, sample_count: u32) -> Self {
+impl State {
+    pub async fn new(window: Arc<Window>, sample_count: u32) -> Self {
         let init = ws::InitWgpu::init_wgpu(window, sample_count).await;
 
         let shader = init

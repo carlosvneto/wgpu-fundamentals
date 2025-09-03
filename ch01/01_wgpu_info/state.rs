@@ -1,13 +1,14 @@
+use std::sync::Arc;
 use winit::{event::WindowEvent, window::Window};
 
 use wgpu_fundamentals::wgpu_simplified;
 
-pub struct State<'a> {
-    pub init: wgpu_simplified::InitWgpu<'a>,
+pub struct State {
+    pub init: wgpu_simplified::InitWgpu,
 }
 
-impl<'a> State<'a> {
-    pub async fn new(window: Window) -> Self {
+impl State {
+    pub async fn new(window: Arc<Window>) -> Self {
         let init = wgpu_simplified::InitWgpu::init_wgpu(window, 1).await;
 
         println!("{:#?}", init.adapter.get_info());

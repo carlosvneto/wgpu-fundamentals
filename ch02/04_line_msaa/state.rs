@@ -1,4 +1,5 @@
 use std::mem;
+use std::sync::Arc;
 use wgpu::util::DeviceExt;
 use winit::{event::WindowEvent, window::Window};
 
@@ -11,16 +12,16 @@ pub struct Vertex {
     color: [f32; 4],
 }
 
-pub struct State<'a> {
-    init: ws::InitWgpu<'a>,
+pub struct State {
+    init: ws::InitWgpu,
     pipeline: wgpu::RenderPipeline,
     vertex_buffer: wgpu::Buffer,
     vertex_count: u32,
     msaa_texture_view: wgpu::TextureView,
 }
 
-impl<'a> State<'a> {
-    pub async fn new(window: Window, sample_count: u32) -> Self {
+impl State {
+    pub async fn new(window: Arc<Window>, sample_count: u32) -> Self {
         let init = ws::InitWgpu::init_wgpu(window, sample_count).await;
 
         let shader = init

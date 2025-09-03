@@ -4,7 +4,6 @@ mod app;
 #[path = "../common/state.rs"]
 mod state;
 
-use std::error::Error;
 use winit::event_loop::EventLoop;
 
 use app::Application;
@@ -38,7 +37,7 @@ fn main() {
 
     let _ = run(&title, inputs, 9);
 
-    pub fn run(title: &str, inputs: Inputs, num_vertices: u32) -> Result<(), Box<dyn Error>> {
+    pub fn run(title: &str, inputs: Inputs<'static>, num_vertices: u32) -> anyhow::Result<()> {
         env_logger::init();
 
         let event_loop = EventLoop::builder().build()?;

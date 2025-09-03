@@ -6,8 +6,8 @@ use std::time::{Duration, Instant};
 use winit::window::Window;
 
 // region: wgpu initialization
-pub struct InitWgpu<'a> {
-    pub surface: wgpu::Surface<'a>,
+pub struct InitWgpu {
+    pub surface: wgpu::Surface<'static>,
     pub adapter: wgpu::Adapter,
     pub device: wgpu::Device,
     pub queue: wgpu::Queue,
@@ -17,9 +17,8 @@ pub struct InitWgpu<'a> {
     pub window: Arc<Window>,
 }
 
-impl<'a> InitWgpu<'a> {
-    pub async fn init_wgpu(window: Window, sample_count: u32) -> Self {
-        let arc_window = Arc::new(window);
+impl InitWgpu {
+    pub async fn init_wgpu(window: Arc<Window>, sample_count: u32) -> Self {
 
         let instance = wgpu::Instance::new(&wgpu::InstanceDescriptor {
             backends: wgpu::Backends::all(),
@@ -27,7 +26,7 @@ impl<'a> InitWgpu<'a> {
         });
 
         // Surface
-        let surface = instance.create_surface(arc_window.clone()).unwrap();
+        let surface = instance.create_surface(window.clone()).unwrap();
 
         // Adapter:
         let adapter = instance
@@ -53,7 +52,7 @@ impl<'a> InitWgpu<'a> {
             .await
             .unwrap();
 
-        let size = arc_window.inner_size();
+        let size = window.inner_size();
 
         let surface_caps = surface.get_capabilities(&adapter);
         let format = surface_caps.formats[0];
@@ -80,7 +79,7 @@ impl<'a> InitWgpu<'a> {
             config,
             size,
             sample_count,
-            window: arc_window,
+            window: window,
         }
     }
 }
@@ -176,6 +175,7 @@ pub fn create_color_attachment<'a>(
 ) -> wgpu::RenderPassColorAttachment<'a> {
     wgpu::RenderPassColorAttachment {
         view: texture_view,
+        depth_slice: None,
         resolve_target: None,
         ops: wgpu::Operations {
             load: wgpu::LoadOp::Clear(wgpu::Color::BLACK),
@@ -209,6 +209,7 @@ pub fn create_msaa_color_attachment<'a>(
 ) -> wgpu::RenderPassColorAttachment<'a> {
     wgpu::RenderPassColorAttachment {
         view: msaa_view,
+        depth_slice: None,
         resolve_target: Some(texture_view),
         ops: wgpu::Operations {
             load: wgpu::LoadOp::Clear(wgpu::Color::BLACK),

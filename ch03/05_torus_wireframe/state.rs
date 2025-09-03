@@ -1,3 +1,4 @@
+use std::sync::Arc;
 use bytemuck::cast_slice;
 use cgmath::Matrix4;
 use rand;
@@ -11,8 +12,8 @@ use winit::{
 use crate::vertex::{create_vertices, Vertex};
 use wgpu_fundamentals::wgpu_simplified as ws;
 
-pub struct State<'a> {
-    init: ws::InitWgpu<'a>,
+pub struct State {
+    init: ws::InitWgpu,
     pipelines: [wgpu::RenderPipeline; 2],
     vertex_buffer: wgpu::Buffer,
     index_buffers: [wgpu::Buffer; 2],
@@ -34,8 +35,8 @@ pub struct State<'a> {
     rotation_speed: f32,
 }
 
-impl<'a> State<'a> {
-    pub async fn new(window: Window, sample_count: u32) -> Self {
+impl State {
+    pub async fn new(window: Arc<Window>, sample_count: u32) -> Self {
         let init = ws::InitWgpu::init_wgpu(window, sample_count).await;
 
         let shader = init

@@ -9,7 +9,7 @@ use winit::{
 use crate::state::State;
 
 pub struct Application<'a> {
-    state: Option<State<'a>>,
+    state: Option<State>,
     title: &'a str,
     sample_count: u32,
 }
@@ -32,9 +32,7 @@ impl<'a> ApplicationHandler for Application<'a> {
             .create_window(window_attributes)
             .expect("Failed to create window");
 
-        let state = pollster::block_on(async { State::new(window, self.sample_count).await });
-
-        self.state = Some(state);
+        self.state = Some(pollster::block_on(async { State::new(window.into(), self.sample_count).await }));
     }
 
     fn window_event(

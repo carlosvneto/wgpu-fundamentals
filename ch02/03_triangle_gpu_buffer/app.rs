@@ -10,21 +10,19 @@ use crate::state::State;
 
 #[derive(Default)]
 pub struct Application<'a> {
-    state: Option<State<'a>>,
-    pub app_title: &'a str,
+    state: Option<State>,
+    pub title: &'a str,
 }
 
 impl<'a> ApplicationHandler for Application<'a> {
     fn resumed(&mut self, event_loop: &ActiveEventLoop) {
-        let window_attributes = Window::default_attributes().with_title(self.app_title);
+        let window_attributes = Window::default_attributes().with_title(self.title);
 
         let window = event_loop
             .create_window(window_attributes)
             .expect("Failed to create window");
 
-        let state = pollster::block_on(async { State::new(window).await });
-
-        self.state = Some(state);
+        self.state = Some(pollster::block_on(async { State::new(window.into()).await }));
     }
 
     fn window_event(
