@@ -21,7 +21,7 @@ impl InitWgpu {
     pub async fn init_wgpu(window: Arc<Window>, sample_count: u32) -> Self {
 
         let instance = wgpu::Instance::new(&wgpu::InstanceDescriptor {
-            backends: wgpu::Backends::all(),
+            backends: wgpu::Backends::PRIMARY,
             ..Default::default()
         });
 
