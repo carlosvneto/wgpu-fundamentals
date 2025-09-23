@@ -1,7 +1,11 @@
 use std::mem;
 use std::sync::Arc;
 use wgpu::util::DeviceExt;
-use winit::{event::WindowEvent, window::Window};
+use winit::{
+    event_loop::ActiveEventLoop,
+    keyboard::KeyCode,
+    window::Window,
+};
 
 use wgpu_fundamentals::wgpu_simplified as ws;
 
@@ -93,16 +97,11 @@ impl State {
         &self.init.window
     }
 
-    pub fn size(&self) -> winit::dpi::PhysicalSize<u32> {
-        self.init.size
-    }
-
-    pub fn resize(&mut self, new_size: winit::dpi::PhysicalSize<u32>) {
-        if new_size.width > 0 && new_size.height > 0 {
-            self.init.size = new_size;
+    pub fn resize(&mut self, width: u32, height: u32) {
+        if width > 0 && height > 0 {
             // The surface needs to be reconfigured every time the window is resized.
-            self.init.config.width = new_size.width;
-            self.init.config.height = new_size.height;
+            self.init.config.width = width;
+            self.init.config.height = height;
             self.init
                 .surface
                 .configure(&self.init.device, &self.init.config);
@@ -112,8 +111,13 @@ impl State {
         }
     }
 
-    pub fn input(&mut self, _event: &WindowEvent) -> bool {
-        false
+    pub fn handle_key(&mut self, event_loop: &ActiveEventLoop, key: KeyCode, pressed: bool) {
+        match (key, pressed) {
+            (KeyCode::Escape, true) => {
+                event_loop.exit();
+            } 
+            _ => {},
+        }
     }
 
     pub fn update(&mut self) {}

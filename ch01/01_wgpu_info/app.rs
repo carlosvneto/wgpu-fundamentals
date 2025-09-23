@@ -1,33 +1,37 @@
+use std::sync::Arc;
 use winit::{
     application::ApplicationHandler,
-    event::{ElementState, KeyEvent, WindowEvent},
+    event::{KeyEvent, WindowEvent},
     event_loop::ActiveEventLoop,
-    keyboard::{KeyCode, PhysicalKey},
+    keyboard::PhysicalKey,
     window::{Window, WindowId},
 };
 
 use crate::state::State;
 
-pub struct Application {
+pub struct App {
     state: Option<State>,
     title: &'static str,
 }
 
-impl Application {
+impl App {
     pub fn new(title: &'static str) -> Self {
         Self { state: None, title }
     }
 }
 
-impl<'a> ApplicationHandler for Application {
+impl ApplicationHandler<State> for App {
     fn resumed(&mut self, event_loop: &ActiveEventLoop) {
         let window_attributes = Window::default_attributes().with_title(self.title);
 
-        let window = event_loop
-            .create_window(window_attributes)
-            .expect("Failed to create window");
+        let window = Arc::new(event_loop.create_window(window_attributes).unwrap());
 
         self.state = Some(pollster::block_on(async { State::new(window.into()).await }));
+    }
+
+    #[allow(unused_mut)]
+    fn user_event(&mut self, _event_loop: &ActiveEventLoop, mut event: State) {
+        self.state = Some(event);
     }
 
     fn window_event(
@@ -36,41 +40,26 @@ impl<'a> ApplicationHandler for Application {
         _window_id: WindowId,
         event: WindowEvent,
     ) {
-        let window_state = match &mut self.state {
-            Some(state) => state,
+        let state = match &mut self.state {
+            Some(canvas) => canvas,
             None => return,
         };
-
-        if window_state.input(&event) {
-            return;
-        }
 
         match event {
             WindowEvent::CloseRequested => {
                 event_loop.exit();
             }
-            WindowEvent::KeyboardInput {
-                event:
-                    KeyEvent {
-                        physical_key: PhysicalKey::Code(KeyCode::Escape),
-                        state: ElementState::Pressed,
-                        ..
-                    },
-                ..
-            } => {
-                event_loop.exit();
-            }
-            WindowEvent::Resized(physical_size) => {
-                //println!("Resized: {:?}", physical_size);
-                window_state.resize(physical_size);
+            WindowEvent::Resized(size) => {
+                state.resize(size.width, size.height);
             }
             WindowEvent::RedrawRequested => {
-                window_state.update();
-                match window_state.render() {
+                state.update();
+                match state.render() {
                     Ok(_) => {}
                     // Rebuild your Surface if it's lost or outdated
                     Err(wgpu::SurfaceError::Lost | wgpu::SurfaceError::Outdated) => {
-                        window_state.resize(window_state.size());
+                        let size = state.window().inner_size();
+                        state.resize(size.width, size.height);
                     }
                     // Terminate application if memory is low
                     Err(wgpu::SurfaceError::OutOfMemory) => {
@@ -86,6 +75,15 @@ impl<'a> ApplicationHandler for Application {
                     }
                 }
             }
+            WindowEvent::KeyboardInput {
+                event:
+                    KeyEvent {
+                        physical_key: PhysicalKey::Code(code),
+                        state: key_state,
+                        ..
+                    },
+                ..
+            } => state.handle_key(event_loop, code, key_state.is_pressed()),        
             _ => {}
         }
     }

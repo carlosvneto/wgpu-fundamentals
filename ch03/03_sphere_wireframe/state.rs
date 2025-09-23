@@ -5,7 +5,8 @@ use rand;
 use std::mem;
 use wgpu::util::DeviceExt;
 use winit::{
-    event::ElementState, event::KeyEvent, event::WindowEvent, keyboard::Key, keyboard::NamedKey,
+    event_loop::ActiveEventLoop,
+    keyboard::KeyCode,
     window::Window,
 };
 
@@ -199,22 +200,17 @@ impl State {
         &self.init.window
     }
 
-    pub fn size(&self) -> winit::dpi::PhysicalSize<u32> {
-        self.init.size
-    }
-
-    pub fn resize(&mut self, new_size: winit::dpi::PhysicalSize<u32>) {
-        if new_size.width > 0 && new_size.height > 0 {
-            self.init.size = new_size;
+    pub fn resize(&mut self, width: u32, height: u32) {
+        if width > 0 && height > 0 {
             // The surface needs to be reconfigured every time the window is resized.
-            self.init.config.width = new_size.width;
-            self.init.config.height = new_size.height;
+            self.init.config.width = width;
+            self.init.config.height = height;
             self.init
                 .surface
                 .configure(&self.init.device, &self.init.config);
 
             self.project_mat =
-                ws::create_projection_mat(new_size.width as f32 / new_size.height as f32, true);
+                ws::create_projection_mat(width as f32 / height as f32, true);
             self.depth_texture_view = ws::create_depth_view(&self.init);
             if self.init.sample_count > 1 {
                 self.msaa_texture_view = ws::create_msaa_texture_view(&self.init);
@@ -222,83 +218,64 @@ impl State {
         }
     }
 
-    pub fn input(&mut self, event: &WindowEvent) -> bool {
-        match event {
-            WindowEvent::KeyboardInput {
-                event:
-                    KeyEvent {
-                        logical_key: key,
-                        state: ElementState::Pressed,
-                        ..
-                    },
-                ..
-            } => match key.as_ref() {
-                Key::Named(NamedKey::Control) => {
-                    let scolor: [f32; 3] = [rand::random(), rand::random(), rand::random()];
-                    self.init.queue.write_buffer(
-                        &self.uniform_buffers[1],
-                        0,
-                        bytemuck::cast_slice(scolor.as_ref()),
-                    );
-                    return true;
+    pub fn handle_key(&mut self, event_loop: &ActiveEventLoop, key: KeyCode, pressed: bool) {
+        match (key, pressed) {
+            (KeyCode::Escape, true) => {
+                event_loop.exit();
+            } 
+            (KeyCode::ControlLeft, _pressed) => {
+                let scolor: [f32; 3] = [rand::random(), rand::random(), rand::random()];
+                self.init.queue.write_buffer(
+                    &self.uniform_buffers[1],
+                    0,
+                    bytemuck::cast_slice(scolor.as_ref()),
+                );
+            }
+            (KeyCode::AltLeft, _pressed) => {
+                let wcolor: [f32; 3] = [rand::random(), rand::random(), rand::random()];
+                self.init.queue.write_buffer(
+                    &self.uniform_buffers[2],
+                    0,
+                    bytemuck::cast_slice(wcolor.as_ref()),
+                );
+            }
+            (KeyCode::Space, _pressed) => {
+                self.plot_type = (self.plot_type + 1) % 3;
+            }
+            (KeyCode::KeyQ, _pressed) => {
+                self.radius += 0.1;
+                self.update_buffers = true;
+            }
+            (KeyCode::KeyA, _pressed) => {
+                self.radius -= 0.1;
+                self.update_buffers = true;
+            }
+            (KeyCode::KeyW, _pressed) => {
+                self.u_segments += 1;
+                self.recreate_buffers = true;
+            }
+            (KeyCode::KeyS, _pressed) => {
+                self.u_segments -= 1;
+                self.recreate_buffers = true;
+            }
+            (KeyCode::KeyE, _pressed) => {
+                self.v_segments += 1;
+                self.recreate_buffers = true;
+            }
+            (KeyCode::KeyD, _pressed) => {
+                self.v_segments -= 1;
+                self.recreate_buffers = true;
+            }
+            (KeyCode::KeyR, _pressed) => {
+                self.rotation_speed += 0.1;
+            }
+            (KeyCode::KeyF, _pressed) => {
+                self.rotation_speed -= 0.1;
+                if self.rotation_speed < 0.0 {
+                    self.rotation_speed = 0.0;
                 }
-                Key::Named(NamedKey::Alt) => {
-                    let wcolor: [f32; 3] = [rand::random(), rand::random(), rand::random()];
-                    self.init.queue.write_buffer(
-                        &self.uniform_buffers[2],
-                        0,
-                        bytemuck::cast_slice(wcolor.as_ref()),
-                    );
-                    return true;
-                }
-                Key::Named(NamedKey::Space) => {
-                    self.plot_type = (self.plot_type + 1) % 3;
-                    return true;
-                }
-                Key::Character("q") => {
-                    self.radius += 0.1;
-                    self.update_buffers = true;
-                    return true;
-                }
-                Key::Character("a") => {
-                    self.radius -= 0.1;
-                    self.update_buffers = true;
-                    return true;
-                }
-                Key::Character("w") => {
-                    self.u_segments += 1;
-                    self.recreate_buffers = true;
-                    return true;
-                }
-                Key::Character("s") => {
-                    self.u_segments -= 1;
-                    self.recreate_buffers = true;
-                    return true;
-                }
-                Key::Character("e") => {
-                    self.v_segments += 1;
-                    self.recreate_buffers = true;
-                    return true;
-                }
-                Key::Character("d") => {
-                    self.v_segments -= 1;
-                    self.recreate_buffers = true;
-                    return true;
-                }
-                Key::Character("r") => {
-                    self.rotation_speed += 0.1;
-                    return true;
-                }
-                Key::Character("f") => {
-                    self.rotation_speed -= 0.1;
-                    if self.rotation_speed < 0.0 {
-                        self.rotation_speed = 0.0;
-                    }
-                    return true;
-                }
-                _ => false,
-            },
-            _ => false,
+            }
+            _ => {},
         }
     }
 

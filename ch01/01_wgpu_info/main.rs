@@ -3,7 +3,7 @@ mod state;
 
 use winit::event_loop::EventLoop;
 
-use app::Application;
+use app::App;
 
 fn main() {
     let title = "ch01 wgpu info";
@@ -14,9 +14,8 @@ fn main() {
 pub fn run(title: &'static str) -> anyhow::Result<()> {
     env_logger::init();
 
-    let event_loop = EventLoop::builder().build()?;
-    let mut app = Application::new(title);
-
+    let event_loop = EventLoop::with_user_event().build()?;
+    let mut app = App::new(title);
     event_loop.run_app(&mut app)?;
 
     Ok(())
