@@ -3,7 +3,7 @@
 * wgpu Graphics eBook Series (1)
 * A Beginner's Guide to Rust Graphics Programming
 
-* Tested programs under macOS Sequoia 15.6.1 and Windows 11
+* Tested programs under macOS Tahoe 26.0, Windows 11 and Fedora Linux Asahi Remix 42 
 * Upgraded programs to wgpu version 26.0.1 and winit version 0.30.12
 
 * Compile and run programs:
