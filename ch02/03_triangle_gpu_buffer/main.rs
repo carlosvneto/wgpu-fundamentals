@@ -12,7 +12,7 @@ fn main() {
     pub fn run(title: &'static str) -> anyhow::Result<()> {
         env_logger::init();
 
-        let event_loop = EventLoop::with_user_event().build()?;
+        let event_loop = EventLoop::builder().build()?;
         let mut app = App::default();
 
         app.title = title;

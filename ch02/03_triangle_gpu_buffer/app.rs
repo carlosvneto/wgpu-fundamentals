@@ -15,18 +15,13 @@ pub struct App {
     pub title: &'static str,
 }
 
-impl ApplicationHandler<State> for App {
+impl ApplicationHandler for App {
     fn resumed(&mut self, event_loop: &ActiveEventLoop) {
         let window_attributes = Window::default_attributes().with_title(self.title);
 
         let window = Arc::new(event_loop.create_window(window_attributes).unwrap());
 
         self.state = Some(pollster::block_on(async { State::new(window.into()).await }));
-    }
-    
-    #[allow(unused_mut)]
-    fn user_event(&mut self, _event_loop: &ActiveEventLoop, mut event: State) {
-        self.state = Some(event);
     }
 
     fn window_event(
@@ -78,7 +73,7 @@ impl ApplicationHandler<State> for App {
                         ..
                     },
                 ..
-            } => state.handle_key(event_loop, code, key_state.is_pressed()),
+            } => state.handle_key_input(event_loop, code, key_state.is_pressed()),
             _ => {}
         }
     }
