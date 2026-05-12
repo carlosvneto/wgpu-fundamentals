@@ -1,4 +1,4 @@
-use cgmath::{ortho, perspective, Matrix4, Point3, Rad, Vector3};
+use glam::{Mat4, Vec3};
 use std::collections::VecDeque; // HashMap
 use std::f32::consts::PI;
 use std::sync::Arc;
@@ -19,10 +19,12 @@ pub struct InitWgpu {
 
 impl InitWgpu {
     pub async fn init_wgpu(window: Arc<Window>, sample_count: u32) -> Self {
-
-        let instance = wgpu::Instance::new(&wgpu::InstanceDescriptor {
+        let instance = wgpu::Instance::new(wgpu::InstanceDescriptor {
             backends: wgpu::Backends::PRIMARY,
-            ..Default::default()
+            flags: Default::default(),
+            memory_budget_thresholds: Default::default(),
+            backend_options: Default::default(),
+            display: None,
         });
 
         // Surface
@@ -41,14 +43,12 @@ impl InitWgpu {
 
         // Logical Device and Queue
         let (device, queue) = adapter
-            .request_device(
-                &wgpu::DeviceDescriptor {
-                    label: None,
-                    required_features: wgpu::Features::empty(),
-                    required_limits: wgpu::Limits::default(),
-                    ..Default::default()
-                },
-            )
+            .request_device(&wgpu::DeviceDescriptor {
+                label: None,
+                required_features: wgpu::Features::empty(),
+                required_limits: wgpu::Limits::default(),
+                ..Default::default()
+            })
             .await
             .unwrap();
 
@@ -129,8 +129,8 @@ impl IRenderPipeline<'_> {
         if self.is_depth_stencil {
             depth_stencil = Some(wgpu::DepthStencilState {
                 format: wgpu::TextureFormat::Depth24Plus,
-                depth_write_enabled: true,
-                depth_compare: wgpu::CompareFunction::LessEqual,
+                depth_write_enabled: Some(true),
+                depth_compare: Some(wgpu::CompareFunction::LessEqual),
                 stencil: wgpu::StencilState::default(),
                 bias: wgpu::DepthBiasState::default(),
             });
@@ -162,7 +162,7 @@ impl IRenderPipeline<'_> {
                     count: init.sample_count,
                     ..Default::default()
                 },
-                multiview: None,
+                multiview_mask: None,
                 cache: None,
             })
     }
@@ -273,22 +273,23 @@ pub fn create_shadow_texture_view(init: &InitWgpu, width: u32, height: u32) -> w
 // endregion: views and attachments
 
 // region: tranformation
-pub const OPENGL_TO_WGPU_MATRIX: Matrix4<f32> = Matrix4::new(
-    1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.5, 0.0, 0.0, 0.0, 0.5, 1.0,
-);
+#[rustfmt::skip]
+pub const OPENGL_TO_WGPU_MATRIX: Mat4 = Mat4::from_cols_array_2d(&[
+    [1.0, 0.0, 0.0, 0.0],
+    [0.0, 1.0, 0.0, 0.0],
+    [0.0, 0.0, 0.5, 0.0], // Z scaling
+    [0.0, 0.0, 0.5, 1.0], // Z translation
+]);
 
-pub fn create_model_mat(
-    translation: [f32; 3],
-    rotation: [f32; 3],
-    scaling: [f32; 3],
-) -> Matrix4<f32> {
+pub fn create_model_mat(translation: [f32; 3], rotation: [f32; 3], scaling: [f32; 3]) -> Mat4 {
     // create transformation matrices
     let trans_mat =
-        Matrix4::from_translation(Vector3::new(translation[0], translation[1], translation[2]));
-    let rotate_mat_x = Matrix4::from_angle_x(Rad(rotation[0]));
-    let rotate_mat_y = Matrix4::from_angle_y(Rad(rotation[1]));
-    let rotate_mat_z = Matrix4::from_angle_z(Rad(rotation[2]));
-    let scale_mat = Matrix4::from_nonuniform_scale(scaling[0], scaling[1], scaling[2]);
+        Mat4::from_translation(Vec3::new(translation[0], translation[1], translation[2]));
+    let rotate_mat_x = Mat4::from_axis_angle(Vec3::X, rotation[0]);
+    let rotate_mat_y = Mat4::from_axis_angle(Vec3::Y, rotation[1]);
+    let rotate_mat_z = Mat4::from_axis_angle(Vec3::Z, rotation[2]);
+    let scale_vec = Vec3::new(scaling[0], scaling[1], scaling[2]);
+    let scale_mat = Mat4::from_scale(scale_vec);
 
     // combine all transformation matrices together to form a final transform matrix: model matrix
     let model_mat = trans_mat * rotate_mat_z * rotate_mat_y * rotate_mat_x * scale_mat;
@@ -297,35 +298,34 @@ pub fn create_model_mat(
     model_mat
 }
 
-pub fn create_view_mat(
-    camera_position: Point3<f32>,
-    look_direction: Point3<f32>,
-    up_direction: Vector3<f32>,
-) -> Matrix4<f32> {
-    Matrix4::look_at_rh(camera_position, look_direction, up_direction)
+pub fn create_view_mat(camera_position: Vec3, look_direction: Vec3, up_direction: Vec3) -> Mat4 {
+    Mat4::look_at_rh(camera_position, look_direction, up_direction)
 }
 
-pub fn create_projection_mat(aspect: f32, is_perspective: bool) -> Matrix4<f32> {
-    let project_mat: Matrix4<f32>;
+pub fn create_projection_mat(aspect: f32, is_perspective: bool) -> Mat4 {
+    let project_mat: Mat4;
     if is_perspective {
-        project_mat = OPENGL_TO_WGPU_MATRIX * perspective(Rad(2.0 * PI / 5.0), aspect, 0.1, 1000.0);
+        project_mat =
+            OPENGL_TO_WGPU_MATRIX * Mat4::perspective_rh(2.0 * PI / 5.0, aspect, 0.1, 100.0);
     } else {
-        project_mat = OPENGL_TO_WGPU_MATRIX * ortho(-4.0, 4.0, -3.0, 3.0, -1.0, 6.0);
+        project_mat =
+            OPENGL_TO_WGPU_MATRIX * Mat4::orthographic_rh(-4.0, 4.0, -3.0, 3.0, -1.0, 6.0);
     }
     project_mat
 }
 
 pub fn create_vp_mat(
-    camera_position: Point3<f32>,
-    look_direction: Point3<f32>,
-    up_direction: Vector3<f32>,
+    camera_position: Vec3,
+    look_direction: Vec3,
+    up_direction: Vec3,
     aspect: f32,
-) -> (Matrix4<f32>, Matrix4<f32>, Matrix4<f32>) {
+) -> (Mat4, Mat4, Mat4) {
     // construct view matrix
-    let view_mat = Matrix4::look_at_rh(camera_position, look_direction, up_direction);
+    let view_mat = Mat4::look_at_rh(camera_position, look_direction, up_direction);
 
     // construct projection matrix
-    let project_mat = OPENGL_TO_WGPU_MATRIX * perspective(Rad(2.0 * PI / 5.0), aspect, 0.1, 1000.0);
+    let project_mat =
+        OPENGL_TO_WGPU_MATRIX * Mat4::perspective_rh(2.0 * PI / 5.0, aspect, 0.1, 100.0);
 
     // contruct view-projection matrix
     let vp_mat = project_mat * view_mat;
@@ -334,6 +334,7 @@ pub fn create_vp_mat(
     (view_mat, project_mat, vp_mat)
 }
 
+/*
 pub fn create_ortho_mat(
     left: f32,
     right: f32,
@@ -341,9 +342,10 @@ pub fn create_ortho_mat(
     top: f32,
     near: f32,
     far: f32,
-) -> Matrix4<f32> {
-    OPENGL_TO_WGPU_MATRIX * ortho(left, right, bottom, top, near, far)
+) -> Mat4 {
+    OPENGL_TO_WGPU_MATRIX * Mat4::orthographic_rh(-4.0, 4.0, -3.0, 3.0, -1.0, 6.0)
 }
+*/
 // endregion: tranformation
 
 // region: bind groups

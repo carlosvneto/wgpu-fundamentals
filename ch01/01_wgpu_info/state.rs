@@ -1,9 +1,5 @@
 use std::sync::Arc;
-use winit::{
-    event_loop::ActiveEventLoop,
-    keyboard::KeyCode,
-    window::Window,
-};
+use winit::{event_loop::ActiveEventLoop, keyboard::KeyCode, window::Window};
 
 use wgpu_fundamentals::wgpu_simplified;
 
@@ -37,12 +33,12 @@ impl State {
         }
     }
 
-    pub fn handle_key(&mut self, event_loop: &ActiveEventLoop, key: KeyCode, pressed: bool) {
+    pub fn handle_key_input(&mut self, event_loop: &ActiveEventLoop, key: KeyCode, pressed: bool) {
         match (key, pressed) {
             (KeyCode::Escape, true) => {
                 event_loop.exit();
-            } 
-            _ => {},
+            }
+            _ => {}
         }
     }
 
@@ -50,7 +46,7 @@ impl State {
         // We don't have anything to update yet
     }
 
-    pub fn render(&mut self) -> Result<(), wgpu::SurfaceError> {
-        Ok(())
+    pub fn render(&mut self) -> anyhow::Result<()> {
+        return Ok(());
     }
 }

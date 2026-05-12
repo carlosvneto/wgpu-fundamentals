@@ -1,16 +1,12 @@
-use std::sync::Arc;
 use bytemuck::cast_slice;
-use cgmath::Matrix4;
+use glam::Mat4;
 use rand;
 use std::mem;
+use std::sync::Arc;
 use wgpu::util::DeviceExt;
-use winit::{
-    event_loop::ActiveEventLoop,
-    keyboard::KeyCode,
-    window::Window,
-};
+use winit::{event_loop::ActiveEventLoop, keyboard::KeyCode, window::Window};
 
-use crate::vertex::{create_vertices, Vertex};
+use crate::vertex::{Vertex, create_vertices};
 use wgpu_fundamentals::wgpu_simplified as ws;
 
 pub struct State {
@@ -20,8 +16,8 @@ pub struct State {
     index_buffers: [wgpu::Buffer; 2],
     uniform_bind_groups: [wgpu::BindGroup; 2],
     uniform_buffers: [wgpu::Buffer; 3],
-    view_mat: Matrix4<f32>,
-    project_mat: Matrix4<f32>,
+    view_mat: Mat4,
+    project_mat: Mat4,
     msaa_texture_view: wgpu::TextureView,
     depth_texture_view: wgpu::TextureView,
     indices_lens: [u32; 2],
@@ -46,7 +42,7 @@ impl State {
         // uniform data
         let camera_position = (3.0, 1.5, 3.0).into();
         let look_direction = (0.0, 0.0, 0.0).into();
-        let up_direction = cgmath::Vector3::unit_y();
+        let up_direction = (0.0, 1.0, 0.0).into();
 
         let model_mat = ws::create_model_mat([0.0, 0.0, 0.0], [0.0, 0.0, 0.0], [1.0, 1.0, 1.0]);
         let (view_mat, project_mat, vp_mat) = ws::create_vp_mat(
@@ -104,8 +100,8 @@ impl State {
             .device
             .create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
                 label: Some("Render Pipeline Layout"),
-                bind_group_layouts: &[&layout],
-                push_constant_ranges: &[],
+                bind_group_layouts: &[Some(&layout)],
+                immediate_size: 0,
             });
 
         let vertex_buffer_layout = wgpu::VertexBufferLayout {
@@ -126,8 +122,8 @@ impl State {
             init.device
                 .create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
                     label: Some("Render Pipeline Layout 2"),
-                    bind_group_layouts: &[&layout2],
-                    push_constant_ranges: &[],
+                    bind_group_layouts: &[Some(&layout2)],
+                    immediate_size: 0,
                 });
 
         let vertex_buffer_layout2 = wgpu::VertexBufferLayout {
@@ -209,8 +205,7 @@ impl State {
                 .surface
                 .configure(&self.init.device, &self.init.config);
 
-            self.project_mat =
-                ws::create_projection_mat(width as f32 / height as f32, true);
+            self.project_mat = ws::create_projection_mat(width as f32 / height as f32, true);
             self.depth_texture_view = ws::create_depth_view(&self.init);
             if self.init.sample_count > 1 {
                 self.msaa_texture_view = ws::create_msaa_texture_view(&self.init);
@@ -222,7 +217,7 @@ impl State {
         match (key, pressed) {
             (KeyCode::Escape, true) => {
                 event_loop.exit();
-            } 
+            }
             (KeyCode::ControlLeft, _pressed) => {
                 let scolor: [f32; 3] = [rand::random(), rand::random(), rand::random()];
                 self.init.queue.write_buffer(
@@ -275,7 +270,7 @@ impl State {
                     self.rotation_speed = 0.0;
                 }
             }
-            _ => {},
+            _ => {}
         }
     }
 
@@ -330,8 +325,31 @@ impl State {
         }
     }
 
-    pub fn render(&mut self) -> Result<(), wgpu::SurfaceError> {
-        let output = self.init.surface.get_current_texture()?;
+    pub fn render(&mut self) -> anyhow::Result<()> {
+        let output = match self.init.surface.get_current_texture() {
+            wgpu::CurrentSurfaceTexture::Success(surface_texture) => surface_texture,
+            wgpu::CurrentSurfaceTexture::Suboptimal(surface_texture) => {
+                self.init
+                    .surface
+                    .configure(&self.init.device, &self.init.config);
+                surface_texture
+            }
+            wgpu::CurrentSurfaceTexture::Timeout
+            | wgpu::CurrentSurfaceTexture::Occluded
+            | wgpu::CurrentSurfaceTexture::Validation => {
+                // Skip this frame
+                return Ok(());
+            }
+            wgpu::CurrentSurfaceTexture::Outdated => {
+                self.init
+                    .surface
+                    .configure(&self.init.device, &self.init.config);
+                return Ok(());
+            }
+            wgpu::CurrentSurfaceTexture::Lost => {
+                anyhow::bail!("Lost device");
+            }
+        };
 
         let view = output
             .texture
@@ -360,6 +378,7 @@ impl State {
                 depth_stencil_attachment: Some(depth_attachment),
                 occlusion_query_set: None,
                 timestamp_writes: None,
+                multiview_mask: None,
             });
 
             let plot_type = if self.plot_type == 1 {

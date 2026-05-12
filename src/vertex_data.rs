@@ -1,6 +1,6 @@
-use cgmath::{Angle, Deg, InnerSpace, Vector3};
-
-pub fn torus_position(r_torus: f32, r_tube: f32, u: Deg<f32>, v: Deg<f32>) -> [f32; 3] {
+//use cgmath::{Angle, Deg, InnerSpace, Vector3};
+use glam::Vec3;
+pub fn torus_position(r_torus: f32, r_tube: f32, u: f32, v: f32) -> [f32; 3] {
     let x = (r_torus + r_tube * v.cos()) * u.cos();
     let y = r_tube * v.sin();
     let z = -(r_torus + r_tube * v.cos()) * u.sin();
@@ -21,14 +21,32 @@ pub fn create_torus_data(
         let du = i as f32 * 360.0 / n_torus as f32;
         for j in 0..=n_tube {
             let dv = j as f32 * 360.0 / n_tube as f32;
-            let pos = torus_position(r_torus, r_tube, Deg(du), Deg(dv));
+            let pos = torus_position(r_torus, r_tube, du.to_radians(), dv.to_radians());
             positions.push(pos);
 
             // calculate normals
-            let nu = Vector3::from(torus_position(r_torus, r_tube, Deg(du + eps), Deg(dv)))
-                - Vector3::from(torus_position(r_torus, r_tube, Deg(du - eps), Deg(dv)));
-            let nv = Vector3::from(torus_position(r_torus, r_tube, Deg(du), Deg(dv + eps)))
-                - Vector3::from(torus_position(r_torus, r_tube, Deg(du), Deg(dv - eps)));
+            let nu = Vec3::from_array(torus_position(
+                r_torus,
+                r_tube,
+                (du + eps).to_radians(),
+                dv.to_radians(),
+            )) - Vec3::from_array(torus_position(
+                r_torus,
+                r_tube,
+                (du - eps).to_radians(),
+                dv.to_radians(),
+            ));
+            let nv = Vec3::from_array(torus_position(
+                r_torus,
+                r_tube,
+                du.to_radians(),
+                (dv + eps).to_radians(),
+            )) - Vec3::from_array(torus_position(
+                r_torus,
+                r_tube,
+                du.to_radians(),
+                (dv - eps).to_radians(),
+            ));
             let normal = nu.cross(nv).normalize();
             normals.push(normal.into());
         }
@@ -54,7 +72,7 @@ pub fn create_torus_data(
     (positions, normals, indices, indices2)
 }
 
-fn cylinder_position(r: f32, theta: Deg<f32>, y: f32) -> [f32; 3] {
+fn cylinder_position(r: f32, theta: f32, y: f32) -> [f32; 3] {
     let x = r * theta.cos();
     let z = -r * theta.sin();
     [x, y, z]
@@ -73,10 +91,10 @@ pub fn create_cylinder_data(
     let mut positions: Vec<[f32; 3]> = vec![];
     for i in 0..=n {
         let theta = i as f32 * 360.0 / n as f32;
-        let p0 = cylinder_position(rout, Deg(theta), h / 2.0);
-        let p1 = cylinder_position(rout, Deg(theta), -h / 2.0);
-        let p2 = cylinder_position(rin, Deg(theta), -h / 2.0);
-        let p3 = cylinder_position(rin, Deg(theta), h / 2.0);
+        let p0 = cylinder_position(rout, theta.to_radians(), h / 2.0);
+        let p1 = cylinder_position(rout, theta.to_radians(), -h / 2.0);
+        let p2 = cylinder_position(rin, theta.to_radians(), -h / 2.0);
+        let p3 = cylinder_position(rin, theta.to_radians(), h / 2.0);
         let values: Vec<[f32; 3]> = vec![p0, p1, p2, p3];
         positions.extend(values);
     }
@@ -115,7 +133,7 @@ pub fn create_cylinder_data(
     (positions, indices, indices2)
 }
 
-fn sphere_position(r: f32, theta: Deg<f32>, phi: Deg<f32>) -> [f32; 3] {
+fn sphere_position(r: f32, theta: f32, phi: f32) -> [f32; 3] {
     let x = r * theta.sin() * phi.cos();
     let y = r * theta.cos();
     let z = -r * theta.sin() * phi.sin();
@@ -141,7 +159,7 @@ pub fn create_sphere_data(
         for j in 0..=v {
             let theta = i as f32 * 180.0 / u as f32;
             let phi = j as f32 * 360.0 / v as f32;
-            let pos = sphere_position(r, Deg(theta), Deg(phi));
+            let pos = sphere_position(r, theta.to_radians(), phi.to_radians());
             positions.push(pos);
             normals.push([pos[0] / r, pos[1] / r, pos[2] / r]);
             uvs.push([i as f32 / u as f32, j as f32 / v as f32]);

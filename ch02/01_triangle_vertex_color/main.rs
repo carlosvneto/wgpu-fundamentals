@@ -2,7 +2,6 @@
 mod app;
 
 #[path = "../common/state.rs"]
-
 mod state;
 
 use winit::event_loop::EventLoop;
