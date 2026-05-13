@@ -343,7 +343,7 @@ pub fn create_ortho_mat(
     near: f32,
     far: f32,
 ) -> Mat4 {
-    OPENGL_TO_WGPU_MATRIX * Mat4::orthographic_rh(-4.0, 4.0, -3.0, 3.0, -1.0, 6.0)
+    OPENGL_TO_WGPU_MATRIX * Mat4::orthographic_rh(left, right, bottom, top, near, far)
 }
 */
 // endregion: tranformation
